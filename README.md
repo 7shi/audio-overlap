@@ -30,12 +30,12 @@ cd audio-overlap
 uv sync
 ```
 
-**Note**: When using the source checkout, prefix commands with `uv run`.
+**Note**: When using the source checkout, prefix commands with `uv run`, for example `uv run audio-overlap ...`.
 
 ## Run
 
 ```bash
-uv run audio_overlap file1.mp4 file2.mp4
+audio-overlap file1.mp4 file2.mp4
 ```
 
 Output fields:
@@ -82,7 +82,7 @@ The command exits non-zero when no credible overlap is found.
 
 ### Notes
 
-- Tuning options are available through `uv run audio_overlap --help`.
+- Tuning options are available through `audio-overlap --help`.
 - The emitted `ffmpeg` commands splice only video from `file1` / `file2` and map audio from a separate full-length file such as `full_audio.m4a`.
 
 ## Generated samples
