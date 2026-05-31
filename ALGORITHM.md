@@ -4,25 +4,25 @@ This note explains the detector mainly from the mathematical side, with only min
 
 ## Problem setup
 
-Let the tail of `file1` be a discrete-time signal \(x[n]\) and the head of `file2` be \(y[n]\). The goal is to estimate the lag \(\tau\) such that the beginning of \(y[n]\) aligns with a suffix of \(x[n]\). If the two files really share an overlapping segment, then for the correct lag \(\tau^\*\),
+Let the tail of `file1` be a discrete-time signal $x[n]$ and the head of `file2` be $y[n]$. The goal is to estimate the lag $\tau$ such that the beginning of $y[n]$ aligns with a suffix of $x[n]$. If the two files really share an overlapping segment, then for the correct lag $\tau^\*$,
 
-\[
+$$
 x[n+\tau^\*] \approx y[n]
-\]
+$$
 
 on the interval where both signals are present. This is a standard time-delay estimation problem.
 
-The detector does not search the whole files uniformly. It assumes the overlap is near the **end of `file1`** and the **start of `file2`**, so the optimization is restricted to a tail window and a head window. Mathematically, that is a prior on the admissible range of \(\tau\): instead of searching everywhere, the search is concentrated where a splice is expected to occur.
+The detector does not search the whole files uniformly. It assumes the overlap is near the **end of `file1`** and the **start of `file2`**, so the optimization is restricted to a tail window and a head window. Mathematically, that is a prior on the admissible range of $\tau$: instead of searching everywhere, the search is concentrated where a splice is expected to occur.
 
 ## Similarity measure
 
-The main scoring function is normalized cross-correlation. For a candidate lag \(\tau\), the idealized score is
+The main scoring function is normalized cross-correlation. For a candidate lag $\tau$, the idealized score is
 
-\[
+$$
 \rho(\tau)=
 \frac{\sum_n x[n+\tau]\,y[n]}
 {\sqrt{\sum_n x[n+\tau]^2}\sqrt{\sum_n y[n]^2}}.
-\]
+$$
 
 The numerator is large when the two waveforms have the same oscillatory structure. The denominator normalizes away most gain differences, so the score depends more on shape than on absolute loudness. Before this step, the waveform is mean-centered, which removes DC bias, and RMS-normalized, which makes the correlation more comparable across files with different levels.
 
@@ -30,7 +30,7 @@ Only non-negative lags are considered, and only lags with enough shared support 
 
 ## Why FFT appears
 
-A naive evaluation of \(\rho(\tau)\) for every lag would be too expensive for long windows, since direct correlation scales roughly like the product of the two sequence lengths. The detector therefore uses the convolution theorem: correlation in the time domain can be computed through multiplication in the frequency domain, reducing the dominant cost to approximately \(O(N \log N)\).
+A naive evaluation of $\rho(\tau)$ for every lag would be too expensive for long windows, since direct correlation scales roughly like the product of the two sequence lengths. The detector therefore uses the convolution theorem: correlation in the time domain can be computed through multiplication in the frequency domain, reducing the dominant cost to approximately $O(N \log N)$.
 
 The implementation point where this happens is small:
 
@@ -43,7 +43,7 @@ This FFT-based correlation produces a score for every candidate lag efficiently 
 
 ## Varying overlap length
 
-One subtlety is that the valid overlap length changes with the lag. If `file2` is shifted deeper into the tail of `file1`, fewer samples overlap. Because of that, the detector cannot use one fixed normalization denominator for all lags. Instead, it computes the energy of the actually overlapping suffix/prefix pair at each candidate lag and normalizes by those lag-specific energies. In effect, the detector uses a normalized cross-correlation whose support depends on \(\tau\).
+One subtlety is that the valid overlap length changes with the lag. If `file2` is shifted deeper into the tail of `file1`, fewer samples overlap. Because of that, the detector cannot use one fixed normalization denominator for all lags. Instead, it computes the energy of the actually overlapping suffix/prefix pair at each candidate lag and normalizes by those lag-specific energies. In effect, the detector uses a normalized cross-correlation whose support depends on $\tau$.
 
 This is why the algorithm tracks both a lag and an overlap length. Once the best lag is found, the overlap duration is simply the amount of valid shared support associated with that lag.
 
@@ -53,9 +53,9 @@ The optimization is solved in two passes. First, the signals are downsampled and
 
 Mathematically, this is a multiresolution approximation to the same maximization problem:
 
-\[
+$$
 \tau^\*=\arg\max_\tau \rho(\tau).
-\]
+$$
 
 The coarse pass finds the right basin of attraction cheaply; the fine pass improves temporal precision without paying the cost of a full high-resolution search over the entire window. This is especially useful because overlap detection needs both robustness and sub-second accuracy.
 
